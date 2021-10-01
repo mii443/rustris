@@ -13,34 +13,36 @@ pub struct GameData {
     pub next_minos: Vec<Mino>,
     pub mino_rotation: MinoRotation,
     pub field_size: (usize, usize),
+    pub show_ghost: bool,
+    pub hold_mino: Option<Mino>
 }
 
 impl GameData {
-    pub fn new(field_size: (usize, usize)) -> GameData {
+    pub fn new(field_size: (usize, usize), show_ghost: bool) -> GameData {
         let minos: Vec<Mino> = vec![
             Mino {
                 id: String::from("I"),
                 shape: vec![
-                            vec![false, false, true ,false],
-                            vec![false, false, true ,false],
-                            vec![false, false, true ,false],
-                            vec![false, false, true ,false],
+                            vec![false, false, false ,false],
+                            vec![true, true, true ,true],
+                            vec![false, false, false ,false],
+                            vec![false, false, false ,false],
                         ]
             },
             Mino { 
                 id: String::from("J"), 
                 shape: vec![
-                            vec![false, true, false],
-                            vec![false, true, false],
-                            vec![true, true, false],
+                            vec![true, false, false],
+                            vec![true, true, true],
+                            vec![false, false, false],
                         ] 
             },
             Mino { 
                 id: String::from("L"), 
                 shape: vec![
-                            vec![false ,true ,false],
-                            vec![false ,true ,false],
-                            vec![false ,true ,true],
+                            vec![false ,false ,true],
+                            vec![true ,true ,true],
+                            vec![false ,false ,false],
                         ]
             },
             Mino { 
@@ -84,10 +86,12 @@ impl GameData {
             minos, 
             field, 
             control_mino: None, 
-            mino_pos: (0, 0) ,
+            mino_pos: (0, 0),
             next_minos,
             mino_rotation: MinoRotation::Up,
-            field_size
+            field_size,
+            show_ghost,
+            hold_mino: None
         }
     }
 }

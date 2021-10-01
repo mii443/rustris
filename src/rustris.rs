@@ -1,17 +1,17 @@
 use crossterm::terminal;
 use rand::prelude::*;
 
-use crate::{block::Block, game_data::*, mino::Mino, mino_rotation::MinoRotation};
+use crate::{block::Block, game_data::*, game_status::GameStatus, mino::Mino, mino_rotation::MinoRotation, super_rotation::SuperRotation};
 
 #[derive(Debug)]
 pub struct Rustris {
-    pub game_data: GameData
+    pub game_data: GameData,
+    pub game_status: GameStatus
 }
 
 impl Rustris {
-    pub fn new(field_size: (usize, usize)) -> Rustris {
-        let game_data = GameData::new(field_size);
-        Rustris { game_data }
+    pub fn new(game_data: GameData) -> Rustris {
+        Rustris { game_data, game_status: GameStatus::Playing }
     }
 
     pub fn get_next_mino(&mut self) -> Mino {
@@ -33,15 +33,30 @@ impl Rustris {
     }
 
     fn rotate_mino(&mut self, rotation: MinoRotation) -> bool {
-        let original_rotation = self.game_data.mino_rotation.clone();
-        self.game_data.mino_rotation = rotation;
+        if let Some(mino) = self.game_data.control_mino.clone() {
+            let mut super_rotation = SuperRotation::new(
+                self.game_data.field.clone(),
+                mino.clone(),
+                self.game_data.mino_pos.clone(),
+                self.game_data.field_size.clone(),
+                self.game_data.mino_rotation.clone(),
+                rotation.clone()
+            );
 
-        if self.check_field() {
-            true
-        } else {
-            self.game_data.mino_rotation = original_rotation;
-            false
+            if super_rotation.rotate() {
+                self.game_data.mino_pos = super_rotation.mino_position.clone();
+                self.game_data.mino_rotation = super_rotation.now_rotation.clone();
+                if self.check_field() {
+                    return true;
+                } else {
+                    self.game_data.mino_pos = super_rotation.origin_position;
+                    self.game_data.mino_rotation = super_rotation.origin_rotation;
+                    return false;
+                }
+            }
         }
+
+        false
     }
 
     pub fn rotate_mino_to_right(&mut self) -> bool {
@@ -61,6 +76,18 @@ impl Rustris {
         } else {
             self.game_data.mino_pos.0 -= x;
             self.game_data.mino_pos.1 -= y;
+            false
+        }
+    }
+
+    pub fn next_mino(&mut self) -> bool {
+        self.game_data.control_mino = Some(self.get_next_mino());
+        self.game_data.mino_pos = (0, 3);
+        self.game_data.mino_rotation = MinoRotation::Up;
+        if self.check_field() {
+            true
+        } else {
+            self.game_status = GameStatus::Gameover;
             false
         }
     }
@@ -114,6 +141,8 @@ impl Rustris {
                             Block::Ghost => {
                                 field[(x as i32 + offset.0) as usize][(y as i32 + offset.1) as usize] = block_type;
                             }
+
+                            _ => ()
                         }
                     }
                 }
@@ -141,10 +170,13 @@ impl Rustris {
         let original_field = self.game_data.field.clone();
         let original_mino_pos = self.game_data.mino_pos;
 
-        while self.move_mino(1, 0) { }
-        self.place_control_mino(Block::Ghost);
+        if self.game_data.show_ghost {
+            while self.move_mino(1, 0) { }
+            self.place_control_mino(Block::Ghost);
+        }
+
         self.game_data.mino_pos = original_mino_pos;
-        self.place_control_mino(Block::Block);
+        self.place_control_mino(Block::Control);
 
         let console_size = terminal::size().expect("Error: Cannot get console size.");
 
@@ -159,10 +191,23 @@ impl Rustris {
             print_buffer += "\n";
         }
 
-        for _ in 0..(console_size.1 / 6) {
-            for _ in 0..console_size.0 {
-                print_buffer += " ";
-            }
+        print_buffer += "　　　　　Hold\n";
+        if let Some(hold) = self.game_data.hold_mino.clone() {
+            for shape_row in hold.shape {
+                print_buffer += "　　　　　";
+                for x in shape_row {
+                    print_buffer += if x {
+                        "■"
+                    } else {
+                        "　"
+                    }
+                }
+                print_buffer += "\n";
+            }   
+        }
+        print_buffer += "　　　　　Z ホールド, X 左回転, C 右回転\n";
+
+        for _ in 0..(if (console_size.1 - print_buffer.lines().count() as u16) > 0 { console_size.1 - print_buffer.lines().count() as u16 - 1 } else { console_size.1 - print_buffer.lines().count() as u16 }) {
             print_buffer += "\n";
         }
 

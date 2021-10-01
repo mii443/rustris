@@ -2,7 +2,8 @@
 pub enum Block {
     Air,
     Block,
-    Ghost
+    Ghost,
+    Control
 }
 
 impl Block {
@@ -11,6 +12,7 @@ impl Block {
             Block::Air => String::from("・"),
             Block::Block => String::from("■"),
             Block::Ghost => String::from("□"),
+            Block::Control => String::from("■"),
         }
     }
 }
