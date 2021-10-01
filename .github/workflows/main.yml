@@ -40,7 +40,7 @@ jobs:
           with:
             upload_url: ${{ steps.upload-url.outputs.url }}
             asset_path: ./build-${{ matrix.target }}/rustris-${{ matrix.target }}.zip
-            asset_name: slack-stream-json-${{ matrix.target }}.zip
+            asset_name: rustris-${{ matrix.target }}.zip
             asset_content_type: application/zip
     create-release:
       needs: [build]
@@ -109,7 +109,7 @@ jobs:
             use-cross: true
 
         - run: |
-            zip --junk-paths slack-stream-json-${{ matrix.target }} target/${{ matrix.target }}/release/rustris{,.exe}
+            zip --junk-paths rustris-${{ matrix.target }} target/${{ matrix.target }}/release/rustris{,.exe}
         - uses: actions/upload-artifact@v1
           with:
             name: build-${{ matrix.target }}
