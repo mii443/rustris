@@ -270,33 +270,7 @@ fn main() {
 
         {
             let mut rustris = rustris.lock().unwrap();
-            let mut clear_lines = 0;
-            for x in 0..(rustris.game_data.field_size.1) {
-                let mut air = false;
-                for y in 0..(rustris.game_data.field_size.0) {
-                    if let Block::Air = rustris.game_data.field[x][y] {
-                        air = true;
-                    }
-                }
-                
-                if !air {
-                    clear_lines += 1;
-                    for y in 0..(rustris.game_data.field_size.0) {
-                        rustris.game_data.field[x][y] = Block::Air;
-                    }
-    
-                    for x2 in (0..(rustris.game_data.field_size.1)).rev() {
-                        if x2 < x && x2 < 20 {
-                            for y2 in 0..(rustris.game_data.field_size.0) {
-                                rustris.game_data.field[x2 + 1][y2] = rustris.game_data.field[x2][y2];
-                                rustris.game_data.field[x2][y2] = Block::Air;
-                            }
-                        }
-                    }
-                }
-            }
-
-            rustris.game_data.score += clear_lines * 100;
+            rustris.check_clear();
         }
 
         {
