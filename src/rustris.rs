@@ -43,6 +43,7 @@ impl Rustris {
         }
 
         self.game_data.score += clear_lines * 100;
+        self.game_data.game_speed += 0.01 * clear_lines as f32;
     }
 
     pub fn get_next_mino(&mut self) -> Mino {

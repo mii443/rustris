@@ -147,7 +147,12 @@ fn main() {
             if *exit_flag_rc.lock().unwrap() {
                 break;
             }
-            thread::sleep(Duration::from_secs_f32(0.5));
+            let mut game_speed = 0.5f32;
+            {
+                let rustris_rc = rustris_rc.lock().unwrap();
+                game_speed = rustris_rc.game_data.game_speed;
+            }
+            thread::sleep(Duration::from_secs_f32(game_speed));
             {
                 let mut rustris_rc = rustris_rc.lock().unwrap();
                 if !rustris_rc.move_mino(1, 0) {
@@ -169,8 +174,9 @@ fn main() {
                 }
             }
             {
+                let mut rustris_rc = rustris_rc.lock().unwrap();
                 let mut stdout = stdout_rc.lock().unwrap();
-                let buf = rustris_rc.lock().unwrap().show();
+                let buf = rustris_rc.show();
                 execute!(stdout, Print(buf)).unwrap()
             }
         }

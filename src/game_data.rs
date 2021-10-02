@@ -16,6 +16,7 @@ pub struct GameData {
     pub show_ghost: bool,
     pub hold_mino: Option<Mino>,
     pub score: i64,
+    pub game_speed: f32,
 }
 
 impl GameData {
@@ -94,6 +95,7 @@ impl GameData {
             show_ghost,
             hold_mino: None,
             score: 0,
+            game_speed: 0.5,
         }
     }
 }
