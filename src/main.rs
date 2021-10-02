@@ -270,6 +270,7 @@ fn main() {
 
         {
             let mut rustris = rustris.lock().unwrap();
+            let mut clear_lines = 0;
             for x in 0..(rustris.game_data.field_size.1) {
                 let mut air = false;
                 for y in 0..(rustris.game_data.field_size.0) {
@@ -279,6 +280,7 @@ fn main() {
                 }
                 
                 if !air {
+                    clear_lines += 1;
                     for y in 0..(rustris.game_data.field_size.0) {
                         rustris.game_data.field[x][y] = Block::Air;
                     }
@@ -293,6 +295,8 @@ fn main() {
                     }
                 }
             }
+
+            rustris.game_data.score += clear_lines * 100;
         }
 
         {
@@ -313,6 +317,11 @@ fn main() {
                     stdout,
                     cursor::MoveTo(console_size.0 / 2, console_size.1 / 2),
                     Print("Game Over")
+                ).unwrap();
+                execute!(
+                    stdout,
+                    cursor::MoveTo(console_size.0 / 2, console_size.1 / 2 + 1),
+                    Print(format!("Score : {}", rustris.game_data.score))
                 ).unwrap();
 
                 thread::sleep(Duration::from_secs(3));
@@ -340,7 +349,7 @@ fn main() {
     }
 
     *exit_flag.lock().unwrap() = true;
-    frame_thread.join();
+    frame_thread.join().unwrap();
     main();
 }
 

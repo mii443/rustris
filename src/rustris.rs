@@ -205,7 +205,7 @@ impl Rustris {
                 print_buffer += "\n";
             }   
         }
-        print_buffer += "　　　　　Z ホールド, X 左回転, C 右回転\n";
+        print_buffer += &format!("　　　　　Z ホールド, X 左回転, C 右回転   score: {}\n", self.game_data.score);
 
         for _ in 0..(if (console_size.1 - print_buffer.lines().count() as u16) > 0 { console_size.1 - print_buffer.lines().count() as u16 - 1 } else { console_size.1 - print_buffer.lines().count() as u16 }) {
             print_buffer += "\n";
