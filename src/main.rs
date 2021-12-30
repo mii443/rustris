@@ -5,9 +5,9 @@ mod rustris;
 mod mino_rotation;
 mod game_status;
 mod super_rotation;
-use std::{io::stdout, process::exit, sync::{Arc, Mutex}, thread, time::Duration};
+use std::{io::stdout, sync::{Arc, Mutex}, thread, time::Duration};
 
-use crossterm::{cursor, event::{Event, KeyCode, KeyEvent, KeyModifiers, read}, execute, style::{Color, Print, ResetColor, SetBackgroundColor, SetForegroundColor}, terminal::{self, Clear, ClearType, enable_raw_mode}};
+use crossterm::{cursor, event::{Event, KeyCode, KeyEvent, KeyModifiers, read}, execute, style::{Color, Print, ResetColor, SetBackgroundColor}, terminal::{self, Clear, ClearType, enable_raw_mode}};
 use game_data::GameData;
 use game_status::GameStatus;
 use mino_rotation::MinoRotation;
@@ -150,7 +150,12 @@ fn main() {
             if *exit_flag_rc.lock().unwrap() {
                 break;
             }
-            thread::sleep(Duration::from_secs_f32(0.5));
+            let mut game_speed = 0.5f32;
+            {
+                let rustris_rc = rustris_rc.lock().unwrap();
+                game_speed = rustris_rc.game_data.game_speed;
+            }
+            thread::sleep(Duration::from_secs_f32(game_speed));
             {
                 let mut rustris_rc = rustris_rc.lock().unwrap();
                 if !rustris_rc.move_mino(1, 0) {
@@ -162,6 +167,8 @@ fn main() {
                         } else {
                             rustris_rc.place_control_mino(Block::Block);
                             rustris_rc.next_mino();
+                            rustris_rc.check_clear();
+
                             ground_flag = false;
                             *control_count_rc.lock().unwrap() = 0;
                             before_control_count = 0;
@@ -172,8 +179,9 @@ fn main() {
                 }
             }
             {
+                let mut rustris_rc = rustris_rc.lock().unwrap();
                 let mut stdout = stdout_rc.lock().unwrap();
-                let buf = rustris_rc.lock().unwrap().show();
+                let buf = rustris_rc.show();
                 execute!(stdout, Print(buf)).unwrap()
             }
         }
@@ -232,6 +240,7 @@ fn main() {
                 modifiers: KeyModifiers::NONE
             }) => {
                 let mut rustris = rustris.lock().unwrap();
+
                 if let Some(holding) = rustris.game_data.hold_mino.clone() {
                     let control_tmp = rustris.game_data.control_mino.clone();
                     rustris.game_data.control_mino = Some(holding);
@@ -273,29 +282,7 @@ fn main() {
 
         {
             let mut rustris = rustris.lock().unwrap();
-            for x in 0..(rustris.game_data.field_size.1) {
-                let mut air = false;
-                for y in 0..(rustris.game_data.field_size.0) {
-                    if let Block::Air = rustris.game_data.field[x][y] {
-                        air = true;
-                    }
-                }
-                
-                if !air {
-                    for y in 0..(rustris.game_data.field_size.0) {
-                        rustris.game_data.field[x][y] = Block::Air;
-                    }
-    
-                    for x2 in (0..(rustris.game_data.field_size.1)).rev() {
-                        if x2 < x && x2 < 20 {
-                            for y2 in 0..(rustris.game_data.field_size.0) {
-                                rustris.game_data.field[x2 + 1][y2] = rustris.game_data.field[x2][y2];
-                                rustris.game_data.field[x2][y2] = Block::Air;
-                            }
-                        }
-                    }
-                }
-            }
+            rustris.check_clear();
         }
 
         {
@@ -316,6 +303,11 @@ fn main() {
                     stdout,
                     cursor::MoveTo(console_size.0 / 2, console_size.1 / 2),
                     Print("Game Over")
+                ).unwrap();
+                execute!(
+                    stdout,
+                    cursor::MoveTo(console_size.0 / 2, console_size.1 / 2 + 1),
+                    Print(format!("Score : {}", rustris.game_data.score))
                 ).unwrap();
 
                 thread::sleep(Duration::from_secs(3));
@@ -343,7 +335,7 @@ fn main() {
     }
 
     *exit_flag.lock().unwrap() = true;
-    frame_thread.join();
+    frame_thread.join().unwrap();
     main();
 }
 

@@ -6,12 +6,44 @@ use crate::{block::Block, game_data::*, game_status::GameStatus, mino::Mino, min
 #[derive(Debug)]
 pub struct Rustris {
     pub game_data: GameData,
-    pub game_status: GameStatus
+    pub game_status: GameStatus,
+    pub t_spin: bool,
 }
 
 impl Rustris {
     pub fn new(game_data: GameData) -> Rustris {
-        Rustris { game_data, game_status: GameStatus::Playing }
+        Rustris { game_data, game_status: GameStatus::Playing, t_spin: false }
+    }
+
+    pub fn check_clear(&mut self) {
+        let mut clear_lines = 0;
+        for x in 0..(self.game_data.field_size.1) {
+            let mut air = false;
+            for y in 0..(self.game_data.field_size.0) {
+                if let Block::Air = self.game_data.field[x][y] {
+                    air = true;
+                }
+            }
+            
+            if !air {
+                clear_lines += 1;
+                for y in 0..(self.game_data.field_size.0) {
+                    self.game_data.field[x][y] = Block::Air;
+                }
+
+                for x2 in (0..(self.game_data.field_size.1)).rev() {
+                    if x2 < x && x2 < 20 {
+                        for y2 in 0..(self.game_data.field_size.0) {
+                            self.game_data.field[x2 + 1][y2] = self.game_data.field[x2][y2];
+                            self.game_data.field[x2][y2] = Block::Air;
+                        }
+                    }
+                }
+            }
+        }
+
+        self.game_data.score += clear_lines * 100;
+        self.game_data.game_speed += 0.01 * clear_lines as f32;
     }
 
     pub fn get_next_mino(&mut self) -> Mino {
@@ -205,7 +237,7 @@ impl Rustris {
                 print_buffer += "\n";
             }   
         }
-        print_buffer += "　　　　　Z ホールド, X 左回転, C 右回転\n";
+        print_buffer += &format!("　　　　　Z ホールド, X 左回転, C 右回転   score: {}\n", self.game_data.score);
 
         for _ in 0..(if (console_size.1 - print_buffer.lines().count() as u16) > 0 { console_size.1 - print_buffer.lines().count() as u16 - 1 } else { console_size.1 - print_buffer.lines().count() as u16 }) {
             print_buffer += "\n";
