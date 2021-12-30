@@ -11,10 +11,13 @@ use crossterm::{cursor, event::{Event, KeyCode, KeyEvent, KeyModifiers, read}, e
 use game_data::GameData;
 use game_status::GameStatus;
 use mino_rotation::MinoRotation;
+use winconsole::console;
 
 use crate::{block::Block, rustris::Rustris};
 
 fn main() {
+    console::set_title("Rustris");
+
     let stdout = Arc::new(Mutex::new(stdout()));
     enable_raw_mode().unwrap();
 
